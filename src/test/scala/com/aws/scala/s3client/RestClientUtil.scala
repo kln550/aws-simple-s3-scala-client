@@ -58,8 +58,7 @@ class RestClientUtil {
       access_token = jsonObject.access_token
       println("access_token: " + access_token)
     } catch {
-      case ioe: java.io.IOException =>
-      case ste: java.net.SocketTimeoutException =>
+      case e: Exception => e.printStackTrace
     }
     return access_token
   }
@@ -91,8 +90,7 @@ class RestClientUtil {
       println(awsTokenInfoFromResponse.credentials)
       return  awsTokenInfoFromResponse.credentials
     } catch {
-      case ioe: java.io.IOException =>
-      case ste: java.net.SocketTimeoutException =>
+      case e: Exception => e.printStackTrace
     }
     return awsTokenInfo
   }
