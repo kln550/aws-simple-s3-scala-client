@@ -29,7 +29,6 @@ import java.util.{ArrayList, List, Map}
 case class OauthToken(access_token: String, refresh_token: String, id: String, token_type: String, issued_at: String, signature: String)
 case class AwsTokenInfo(acccessKeyId: String, secreteAccessKey: String, sessionToken: String)
 case class AwsTokenDetailsTest(credentials: AwsTokenInfo)
-case class AwsTokenDetails(credentials: String)
 
 case class AwsCredentials(private val credentials: java.util.Map[String, String]) {
   def getCredentials = credentials
@@ -67,27 +66,30 @@ class RestClientUtil {
   /* Gets the Oauth token from auth service */
   def getAwsAccessTokens(accessToken: String, awsTokenUrl: String): AwsTokenInfo = {
     val awsTokenInfo  =null
-    var jsonBody = "{'acccessType':'Consume'}";
+    //var jsonBody = "{'acccessType':'Consume'}";
     try {
       // HTTP post request.
-      val post = new HttpPost(awsTokenUrl)
+      val getAwsTokenReq = new HttpGet(awsTokenUrl)
 
       // set the Content-type
-      post.addHeader("Authorization", "Bearer " + accessToken)
-      post.setHeader("Content-type", "application/json;v=1")
-      post.setHeader("Accept", "application/json;v=1")
-      post.setEntity(new StringEntity(jsonBody))
+      getAwsTokenReq.addHeader("Authorization", "Bearer " + accessToken)
+      getAwsTokenReq.setHeader("Content-type", "application/json;v=1")
+      getAwsTokenReq.setHeader("Accept", "application/json;v=1")
+      //getAwsTokenReq.setEntity(new StringEntity(jsonBody))
 
       // Making Rest call.
       val httpClient = new DefaultHttpClient
       val response = httpClient.execute(post)
       val handler = new BasicResponseHandler();
-      println("response:" + response)
+      println("response for getAwsAccessTokens:" + response)
       val responseBody = handler.handleResponse(response);
       println(responseBody)
       val gson = new Gson
       val awsTokenInfoFromResponse = gson.fromJson(responseBody, classOf[AwsTokenDetailsTest])
       println(awsTokenInfoFromResponse.credentials)
+      println("accessKeyId: " + response.credentials.acccessKeyId)
+      println("secreteAccessKey: " + response.credentials.secreteAccessKey)
+      println("sessionToken: " + response.credentials.sessionToken)
       return  awsTokenInfoFromResponse.credentials
     } catch {
       case e: Exception => e.printStackTrace
