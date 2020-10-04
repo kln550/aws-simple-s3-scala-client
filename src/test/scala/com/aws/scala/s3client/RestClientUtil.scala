@@ -64,12 +64,15 @@ class RestClientUtil {
 
 
   /* Gets the Oauth token from auth service */
-  def getAwsAccessTokens(accessToken: String, awsTokenUrl: String): AwsTokenInfo = {
+  def getAwsAccessTokens(accessToken: String, awsTokenUrl: String, datasetid: String): AwsTokenInfo = {
     val awsTokenInfo  =null
     //var jsonBody = "{'acccessType':'Consume'}";
     try {
       // HTTP post request.
-      val getAwsTokenReq = new HttpGet(awsTokenUrl)
+      println("awsTokenUrl: " + awsTokenUrl)
+      val awsTokenUrlUpdated = awsTokenUrl+"?datasetid="+datasetid
+      println("awsTokenUrl with data-set-id: " + awsTokenUrlUpdated)
+      val getAwsTokenReq = new HttpGet(awsTokenUrlUpdated)
 
       // set the Content-type
       getAwsTokenReq.addHeader("Authorization", "Bearer " + accessToken)
@@ -79,7 +82,7 @@ class RestClientUtil {
 
       // Making Rest call.
       val httpClient = new DefaultHttpClient
-      val response = httpClient.execute(post)
+      val response = httpClient.execute(getAwsTokenReq)
       val handler = new BasicResponseHandler();
       println("response for getAwsAccessTokens:" + response)
       val responseBody = handler.handleResponse(response);
@@ -87,9 +90,9 @@ class RestClientUtil {
       val gson = new Gson
       val awsTokenInfoFromResponse = gson.fromJson(responseBody, classOf[AwsTokenDetailsTest])
       println(awsTokenInfoFromResponse.credentials)
-      println("accessKeyId: " + response.credentials.acccessKeyId)
-      println("secreteAccessKey: " + response.credentials.secreteAccessKey)
-      println("sessionToken: " + response.credentials.sessionToken)
+      println("accessKeyId: " + awsTokenInfoFromResponse.credentials.acccessKeyId)
+      println("secreteAccessKey: " + awsTokenInfoFromResponse.credentials.secreteAccessKey)
+      println("sessionToken: " + awsTokenInfoFromResponse.credentials.sessionToken)
       return  awsTokenInfoFromResponse.credentials
     } catch {
       case e: Exception => e.printStackTrace

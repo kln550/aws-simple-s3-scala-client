@@ -9,6 +9,7 @@ class AwsS3Test extends FunSuite with BeforeAndAfterAllConfigMap {
   var awsTokenUrl = ""
   var bucketName = ""
   var fileName = ""
+  var datasetid1 = ""
   //val provider = new AWSStaticCredentialsProvider(new BasicAWSCredentials(AWS_ACCESS_KEY, AWS_SECRET_KEY))
   //val amazonS3Client = AmazonS3ClientBuilder.standard().withCredentials(provider).withRegion("us-east-1").build()
 
@@ -19,6 +20,7 @@ class AwsS3Test extends FunSuite with BeforeAndAfterAllConfigMap {
     clientSecret = configMap.get("client_secret").fold("")(_.toString)
     loginURL = configMap.get("loginUrl").fold("")(_.toString)
     awsTokenUrl = configMap.get("awsTokenUrl").fold("")(_.toString)
+    datasetid1 = configMap.get("datasetid1").fold("")(_.toString)
 
     println("bucketName=" + bucketName)
     println("fileName=" + fileName)
@@ -29,7 +31,7 @@ class AwsS3Test extends FunSuite with BeforeAndAfterAllConfigMap {
     // This will create a bucket for storage.
     var accessToken = restClient.getAccessToken(clientId, clientSecret, loginURL)
     assert(accessToken !== "")
-    val tokenInfo = restClient.getAwsAccessTokens(accessToken, awsTokenUrl)
+    val tokenInfo = restClient.getAwsAccessTokens(accessToken, awsTokenUrl, datasetid1)
     println("acccessKeyId: "+tokenInfo.acccessKeyId)
     println("SecreteAccessKey: "+tokenInfo.secreteAccessKey)
     println("sessionToken: "+tokenInfo.sessionToken)
