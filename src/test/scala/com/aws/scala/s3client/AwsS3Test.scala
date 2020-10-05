@@ -1,27 +1,30 @@
 package com.aws.scala.s3client
 
 import org.scalatest.{BeforeAndAfterAllConfigMap, ConfigMap, FunSuite}
-import com.amazonaws.auth.AWSStaticCredentialsProvider
+import com.amazonaws.auth.profile.ProfileCredentialsProvider
 import com.amazonaws.auth.BasicSessionCredentials
-import com.amazonaws.services.s3.AmazonS3ClientBuilder
+import com.amazonaws.services.s3.{AmazonS3ClientBuilder, AmazonS3, AmazonS3Client}
 import com.amazonaws.services.s3.model.{ListObjectsV2Request, ListObjectsV2Result, S3ObjectSummary}
+import com.amazonaws.ClientConfiguration
 
 import scala.collection.JavaConverters.asScalaBufferConverter
 
-class AwsS3Test extends FunSuite with BeforeAndAfterAllConfigMap {
+class AwsS3Test  extends FunSuite with BeforeAndAfterAllConfigMap {
   var clientId = ""
   var clientSecret = ""
+  var grantType = ""
   var loginURL = ""
   var awsTokenUrl = ""
   var bucketName = ""
   var fileName = ""
   var datasetid1 = ""
 
-   override def beforeAll(configMap: ConfigMap) = {
+   override def beforeAll(configMap: ConfigMap) = {sou
     bucketName = configMap.get("bucketName").fold("")(_.toString)
     fileName = configMap.get("fileName").fold("")(_.toString)
     clientId = configMap.get("client_id").fold("")(_.toString)
     clientSecret = configMap.get("client_secret").fold("")(_.toString)
+     grantType = configMap.get("grant_type").fold("")(_.toString)
     loginURL = configMap.get("loginUrl").fold("")(_.toString)
     awsTokenUrl = configMap.get("awsTokenUrl").fold("")(_.toString)
     datasetid1 = configMap.get("datasetid1").fold("")(_.toString)
@@ -46,8 +49,7 @@ class AwsS3Test extends FunSuite with BeforeAndAfterAllConfigMap {
 
   test("Verify files in S3 bucket") {
     val restClient = new RestClientUtil()
-    // This will create a bucket for storage.
-    var accessToken = restClient.getAccessToken(clientId, clientSecret, loginURL)
+    var accessToken = restClient.getAccessToken(clientId, clientSecret, grantType, loginURL)
     //assert(accessToken !== "")
     val tokenInfo = restClient.getAwsAccessTokens(accessToken, awsTokenUrl, datasetid1)
     println("acccessKeyId: "+tokenInfo.acccessKeyId)
@@ -66,11 +68,18 @@ class AwsS3Test extends FunSuite with BeforeAndAfterAllConfigMap {
 
   def list_objects(bucketName: String, acccessKeyId: String, secreteAccessKey: String, sessionToken: String): List[String] = {
     val sessionCredentials = new BasicSessionCredentials(acccessKeyId, secreteAccessKey, sessionToken)
-    println("sessionCredentials: "+ sessionCredentials.toString)
-    val s3_client = AmazonS3ClientBuilder.standard.withCredentials(new AWSStaticCredentialsProvider(sessionCredentials)).build()
+    println("sessionCredentials: "+  .toString)
+    val clientConfiguration = new ClientConfiguration
+    clientConfiguration.setProxyHost("url")
+    clientConfiguration.setProxyPort(0000)
+
+    //local client
+    //val s3_client=getClient("profileName", clientConfiguration)
+    //main client
+    val s3_client =getClient(sessionCredentials,clientConfiguration)
     var final_list: List[String] = List()
     var list: List[String] = List()
-    val request: ListObjectsV2Request = new ListObjectsV2Request().withBucketName(bucketName)
+    val request: ListObjectsV2Request = new ListObjectsV2Request().withBucketName(bucketName).withPrefix(fileName)
     var result: ListObjectsV2Result = new ListObjectsV2Result()
     do {
       result = s3_client.listObjectsV2(request)
@@ -86,6 +95,18 @@ class AwsS3Test extends FunSuite with BeforeAndAfterAllConfigMap {
     } while (result.isTruncated)
     println("size", final_list.size)
     final_list
+  }
+
+  def getClient(basicSessionCredentials:BasicSessionCredentials,clientConfiguration: ClientConfiguration): AmazonS3Client ={
+    val s3_client =new AmazonS3Client(basicSessionCredentials,clientConfiguration)
+    return s3_client
+  }
+
+  def getClient(profileName: String,clientConfiguration:ClientConfiguration):AmazonS3 ={
+    val credentialsProvider = new ProfileCredentialsProvider(profileName)
+    val amaazonS3ClientBuilder.withClientConfiguration(clientConfiguration).withRegion("us-east-1")
+    val s3_client = amaazonS3ClientBuilder.build
+    return s3_client
   }
 
 }

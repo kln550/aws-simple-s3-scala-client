@@ -44,6 +44,7 @@ class RestClientUtil {
       val nvps = new util.ArrayList[BasicNameValuePair](2)
       nvps.add(new BasicNameValuePair("client_id", clientId))
       nvps.add(new BasicNameValuePair("client_secret", clientSecret))
+      nvps.add(new BasicNameValuePair("grant_type", grantType))
       post.setEntity(new UrlEncodedFormEntity(nvps, HTTP.UTF_8))
       val httpClient = new DefaultHttpClient
       println("Before getAccessToken REST call");
@@ -76,8 +77,8 @@ class RestClientUtil {
 
       // set the Content-type
       getAwsTokenReq.addHeader("Authorization", "Bearer " + accessToken)
-      getAwsTokenReq.setHeader("Content-type", "application/json;v=1")
-      getAwsTokenReq.setHeader("Accept", "application/json;v=1")
+      getAwsTokenReq.setHeader("Content-type", "application/json;v=2")
+      getAwsTokenReq.setHeader("Accept", "application/json;v=2")
       //getAwsTokenReq.setEntity(new StringEntity(jsonBody))
 
       // Making Rest call.
