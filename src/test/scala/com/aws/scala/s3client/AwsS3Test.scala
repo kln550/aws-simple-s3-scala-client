@@ -104,8 +104,9 @@ class AwsS3Test  extends FunSuite with BeforeAndAfterAllConfigMap {
 
   def getClient(profileName: String,clientConfiguration:ClientConfiguration):AmazonS3 ={
     val credentialsProvider = new ProfileCredentialsProvider(profileName)
-    val amaazonS3ClientBuilder.withClientConfiguration(clientConfiguration).withRegion("us-east-1")
-    val s3_client = amaazonS3ClientBuilder.build
+    val amazonS3ClientBuilder = AmazonS3ClientBuilder.standard
+    amazonS3ClientBuilder.withClientConfiguration(clientConfiguration).withRegion("us-east-1")
+    val s3_client = amazonS3ClientBuilder.build
     return s3_client
   }
 
