@@ -37,7 +37,7 @@ case class AwsCredentials(private val credentials: java.util.Map[String, String]
 class RestClientUtil {
 
   /* Gets the Oauth token from auth service */
-  def getAccessToken(clientId: String, clientSecret: String, loginUrl: String): String = {
+  def getAccessToken(clientId: String, clientSecret: String, grantType:String, loginUrl: String): String = {
     var access_token = ""
     try {
       val post = new HttpPost(loginUrl)

@@ -9,7 +9,7 @@ import com.amazonaws.ClientConfiguration
 
 import scala.collection.JavaConverters.asScalaBufferConverter
 
-class AwsS3Test  extends FunSuite with BeforeAndAfterAllConfigMap {
+class AwsS3Test extends FunSuite with BeforeAndAfterAllConfigMap {
   var clientId = ""
   var clientSecret = ""
   var grantType = ""
@@ -18,96 +18,86 @@ class AwsS3Test  extends FunSuite with BeforeAndAfterAllConfigMap {
   var bucketName = ""
   var fileName = ""
   var datasetid1 = ""
+  var datasetid2 = ""
+  var datasetid3 = ""
+  var datasetid4 = ""
+  var datasetid5 = ""
+  var datasetid6 = ""
+  var datasetid7 = ""
+  var proxyUrl = ""
+  var proxyPort = ""
+  var profileName=""
 
-   override def beforeAll(configMap: ConfigMap) = {sou
+  override def beforeAll(configMap: ConfigMap) = {
     bucketName = configMap.get("bucketName").fold("")(_.toString)
     fileName = configMap.get("fileName").fold("")(_.toString)
     clientId = configMap.get("client_id").fold("")(_.toString)
     clientSecret = configMap.get("client_secret").fold("")(_.toString)
-     grantType = configMap.get("grant_type").fold("")(_.toString)
+    grantType = configMap.get("grant_type").fold("")(_.toString)
     loginURL = configMap.get("loginUrl").fold("")(_.toString)
     awsTokenUrl = configMap.get("awsTokenUrl").fold("")(_.toString)
     datasetid1 = configMap.get("datasetid1").fold("")(_.toString)
+    datasetid2 = configMap.get("datasetid2").fold("")(_.toString)
+    datasetid3 = configMap.get("datasetid3").fold("")(_.toString)
+    datasetid4 = configMap.get("datasetid4").fold("")(_.toString)
+    datasetid5 = configMap.get("datasetid5").fold("")(_.toString)
+    datasetid6 = configMap.get("datasetid6").fold("")(_.toString)
+    datasetid7 = configMap.get("datasetid7").fold("")(_.toString)
+
+    proxyUrl = configMap.get("proxyUrl").fold("")(_.toString)
+    proxyPort = configMap.get("proxyPort").fold("")(_.toString)
+
+    profileName = configMap.get("profileName").fold("")(_.toString)
 
     println("bucketName=" + bucketName)
     println("fileName=" + fileName)
+
   }
 
-  test("Verify whether user can able to get Oauth and AWS token") {
+  test("Verify files count in S3 bucket for dataset1 (session token)") {
     val restClient = new RestClientUtil()
-    // This will create a bucket for storage.
-    var accessToken = restClient.getAccessToken(clientId, clientSecret, loginURL)
-    //assert(accessToken !== "")
+
+    // Get OAuthTokens.
+    val accessToken = restClient.getAccessToken(clientId, clientSecret, grantType, loginURL)
+    assert(accessToken !== "")
+
+    // Get AWS tokens.
     val tokenInfo = restClient.getAwsAccessTokens(accessToken, awsTokenUrl, datasetid1)
-    println("acccessKeyId: "+tokenInfo.acccessKeyId)
-    println("SecreteAccessKey: "+tokenInfo.secreteAccessKey)
-    println("sessionToken: "+tokenInfo.sessionToken)
     assert(tokenInfo.acccessKeyId !== null)
     assert(tokenInfo.secreteAccessKey !== null)
     assert(tokenInfo.sessionToken !== null)
-  }
 
-  test("Verify files in S3 bucket") {
-    val restClient = new RestClientUtil()
-    var accessToken = restClient.getAccessToken(clientId, clientSecret, grantType, loginURL)
-    //assert(accessToken !== "")
-    val tokenInfo = restClient.getAwsAccessTokens(accessToken, awsTokenUrl, datasetid1)
-    println("acccessKeyId: "+tokenInfo.acccessKeyId)
-    println("SecreteAccessKey: "+tokenInfo.secreteAccessKey)
-    println("sessionToken: "+tokenInfo.sessionToken)
-    assert(tokenInfo.acccessKeyId !== null)
-    assert(tokenInfo.secreteAccessKey !== null)
-    assert(tokenInfo.sessionToken !== null)
+    // Initialize AWS client
+    val awsClientUtil = new AwsClientUtil(proxyUrl, proxyPort, bucketName, fileName,
+      tokenInfo.acccessKeyId, tokenInfo.secreteAccessKey);
 
     // Getting list of files in given S3 bucket.
-    val filesListInS3bucket = list_objects(bucketName, tokenInfo.acccessKeyId, tokenInfo.secreteAccessKey, tokenInfo.sessionToken);
+    val filesListInS3bucket = awsClientUtil.listObjectsWithSessionCredentials(tokenInfo.sessionToken)
     assert(filesListInS3bucket !== null)
-    assert(filesListInS3bucket.size >0)
+    assert(filesListInS3bucket.size > 0)
   }
 
+  test("Verify files count in S3 bucket for dataset1 (profile)") {
+    val restClient = new RestClientUtil()
 
-  def list_objects(bucketName: String, acccessKeyId: String, secreteAccessKey: String, sessionToken: String): List[String] = {
-    val sessionCredentials = new BasicSessionCredentials(acccessKeyId, secreteAccessKey, sessionToken)
-    println("sessionCredentials: "+  .toString)
-    val clientConfiguration = new ClientConfiguration
-    clientConfiguration.setProxyHost("url")
-    clientConfiguration.setProxyPort(0000)
+    // Get OAuthTokens.
+    val accessToken = restClient.getAccessToken(clientId, clientSecret, grantType, loginURL)
+    assert(accessToken !== "")
 
-    //local client
-    //val s3_client=getClient("profileName", clientConfiguration)
-    //main client
-    val s3_client =getClient(sessionCredentials,clientConfiguration)
-    var final_list: List[String] = List()
-    var list: List[String] = List()
-    val request: ListObjectsV2Request = new ListObjectsV2Request().withBucketName(bucketName).withPrefix(fileName)
-    var result: ListObjectsV2Result = new ListObjectsV2Result()
-    do {
-      result = s3_client.listObjectsV2(request)
-      println("Response from AWS: "+ result)
-      val token = result.getNextContinuationToken
-      println("Next Continuation Token: " + token)
-      request.setContinuationToken(token)
-      list = (result.getObjectSummaries.asScala.map(_.getKey)).toList
-      println(list)
-      println(list.size)
-      final_list = final_list ::: list
-      println(final_list)
-    } while (result.isTruncated)
-    println("size", final_list.size)
-    final_list
-  }
+    // Get AWS tokens.
+    val tokenInfo = restClient.getAwsAccessTokens(accessToken, awsTokenUrl, datasetid1)
+    assert(tokenInfo.acccessKeyId !== null)
+    assert(tokenInfo.secreteAccessKey !== null)
+    assert(tokenInfo.sessionToken !== null)
 
-  def getClient(basicSessionCredentials:BasicSessionCredentials,clientConfiguration: ClientConfiguration): AmazonS3Client ={
-    val s3_client =new AmazonS3Client(basicSessionCredentials,clientConfiguration)
-    return s3_client
-  }
+    // Initialize AWS client
+    val awsClientUtil = new AwsClientUtil(proxyUrl, proxyPort, bucketName, fileName,
+      tokenInfo.acccessKeyId, tokenInfo.secreteAccessKey);
 
-  def getClient(profileName: String,clientConfiguration:ClientConfiguration):AmazonS3 ={
-    val credentialsProvider = new ProfileCredentialsProvider(profileName)
-    val amazonS3ClientBuilder = AmazonS3ClientBuilder.standard
-    amazonS3ClientBuilder.withClientConfiguration(clientConfiguration).withRegion("us-east-1")
-    val s3_client = amazonS3ClientBuilder.build
-    return s3_client
+    // Getting list of files in given S3 bucket.
+    val filesListInS3bucket = awsClientUtil.listObjectsWithProfile(profileName)
+    assert(filesListInS3bucket !== null)
+    assert(filesListInS3bucket.size > 0)
   }
 
 }
